@@ -3,6 +3,7 @@
 import time
 time_start = time.time()
 
+import csv
 import sys
 import os
 import argparse as ap
@@ -111,7 +112,10 @@ tracker_len_prev = 0
 target_points = [] # format: [(minx, miny, maxx, maxy), (minx, miny, maxx, maxy) ... ]
 tracker = []
 
+final = []
+
 for i in range(0, video_frame_number):
+    d = {}
     # Save i-th frame as image
     image = video.get_frame(i/video.fps)
 
@@ -229,6 +233,13 @@ for i in range(0, video_frame_number):
     print('Frame: ' + str(i) + "/" + str(video_frame_number))
     print('Time required: ' + str(round(time.time() - time_start, 1)) + 'sec')
 
+    
+    d['People(this frame)'] = len(tracker)
+    d['People(cumulative)'] = tracking_people_count
+    d['Frame'] = video_frame_number
+    d['Time required'] = round(time.time() - time_start, 1)
+    
+    final.append(d)
     image_img_numpy = np.asarray(image_img)
 
     pose_frame_list.append(image_img_numpy)
@@ -238,6 +249,11 @@ for i in range(0, video_frame_number):
     # image_name = "testset/" + video_output_name + "/" + str(i).zfill(10) + "_" + str(int(video.fps)) + "_" + str(len(tracker)) + ".jpg"
     # print(image_name)
     # image_img.save(image_name)
+
+with open("testset/results.csv", "w") as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+        for line in final:
+            writer.writerow(line['Time required'], line['People(this frame)'], line['People(cumulative)'], line['Frame'])
 
 video_pose = ImageSequenceClip(pose_frame_list, fps=video.fps)
 video_pose.write_videofile("testset/" + video_output_name + "_tracking." + video_type, fps=video.fps, progress_bar=False)
